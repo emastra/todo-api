@@ -13,6 +13,10 @@ var app = express();
 // and that is the middleware we need to give to express
 app.use(bodyParser.json());
 
+//
+// Routes
+//
+
 app.post('/todos', function(req, res) {
   // create an instance of Todo model with the actual received info.
   // the body prop on the req obj is created by bodyParser middleware
@@ -25,7 +29,17 @@ app.post('/todos', function(req, res) {
   }, function(err) {
     res.status(400).send(err);
   });
+});
 
+app.get('/todos', function(req, res) {
+  // Documents can be retrieved through find, findOne and findById. These methods are executed on your Models.
+  // the success case callback gets called with the result of find() which is an array!
+  Todo.find().then(function(todos) {
+    // so place the array inside an object. It's more flexible!
+    res.send({ todos: todos });
+  }, function(err) {
+    res.status(400).send(err);
+  });
 });
 
 app.listen(3000, function() {

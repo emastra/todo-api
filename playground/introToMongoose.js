@@ -27,6 +27,8 @@ var todoSchema = new mongoose.Schema({
 // to use our schema definition, we need to convert our todoSchema into a Model we can work with.
 // To do so, we pass it into mongoose.model(modelName, schema)
 // ! Instances of Models are documents
+// Models are fancy constructors compiled from Schema definitions. An instance of a model is called a document.
+// Models are responsible for creating and reading documents from the underlying MongoDB database.
 var Todo = mongoose.model('Todo', todoSchema);
 
 
