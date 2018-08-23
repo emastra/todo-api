@@ -5,6 +5,8 @@ var obj = new ObjectID();
 console.log('self created object id', obj);
 console.log(obj.getTimestamp());
 
+// the callback is passed a database client instance, from which all database commands are executed.
+// From v3 the callback receive a client arg instead of db arg. then we need to connect to db with client.db.
 MongoClient.connect('mongodb://localhost:27017/TodoApp', { useNewUrlParser: true }, function(err, client) {
   if (err) {
     return console.log('Unable to connect to MongoDB server');
@@ -65,5 +67,6 @@ MongoClient.connect('mongodb://localhost:27017/TodoApp', { useNewUrlParser: true
   // });
 
 
+  // the close method is on the client obj and not on the db obj
   client.close();
 });
