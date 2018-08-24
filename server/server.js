@@ -9,6 +9,7 @@ var Todo = require('./models/todo.js').Todo;
 var User = require('./models/user.js').User;
 
 var app = express();
+var port = process.env.PORT || 3000;
 
 
 //
@@ -70,8 +71,8 @@ app.get('/todos/:id', function(req, res) {
 // Listen
 //
 
-app.listen(3000, function() {
-  console.log('App started on port 3000');
+app.listen(port, function() {
+  console.log(`App started up at port ${port}`);
 });
 
 // // for use in tests files, the app needs to be exported
