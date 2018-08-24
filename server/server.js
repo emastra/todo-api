@@ -1,5 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var ObjectID = require('mongodb').ObjectID;
 
 // with ES6 destructuring it would be:  var {mongoose} = require('./db/mongoose.js');
 var mongoose = require('./db/mongoose.js').mongoose;
@@ -39,6 +40,24 @@ app.get('/todos', function(req, res) {
     res.send({ todos: todos });
   }, function(err) {
     res.status(400).send(err);
+  });
+});
+
+app.get('/todos/:id', function(req, res) {
+  var id = req.params.id;
+  if (!ObjectID.isValid(id)) {
+    // return here ?? and 404??
+    res.status(400).send();
+  }
+  Todo.findById(req.params.id).then(function(todo) {
+    if (!todo) {
+      // return here ??
+      res.status(404).send();
+    }
+    res.send(todo);
+  }).catch(function(err) {
+    // 400 ??
+    res.status(500).send();
   });
 });
 
