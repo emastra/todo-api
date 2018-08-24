@@ -10,9 +10,15 @@ var User = require('./models/user.js').User;
 
 var app = express();
 
+
+//
+// Middleware
+//
+
 // the returned value from the bodyParser json method is a function,
 // and that is the middleware we need to give to express
 app.use(bodyParser.json());
+
 
 //
 // Routes
@@ -46,21 +52,29 @@ app.get('/todos', function(req, res) {
 app.get('/todos/:id', function(req, res) {
   var id = req.params.id;
   if (!ObjectID.isValid(id)) {
-    // return here ?? and 404??
-    res.status(400).send();
+    return res.status(400).send(); // Andrew uses 404
   }
   Todo.findById(req.params.id).then(function(todo) {
     if (!todo) {
-      // return here ??
-      res.status(404).send();
+      return res.status(404).send();
     }
+    // All is good
     res.send(todo);
   }).catch(function(err) {
-    // 400 ??
-    res.status(500).send();
+    res.status(500).send(); // A uses 400
   });
 });
+
+
+//
+// Listen
+//
 
 app.listen(3000, function() {
   console.log('App started on port 3000');
 });
+
+// // for use in tests files, the app needs to be exported
+// module.exports = {
+//   app: app
+// }
