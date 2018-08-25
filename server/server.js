@@ -66,6 +66,30 @@ app.get('/todos/:id', function(req, res) {
   });
 });
 
+app.delete('/todos/:id', function(req, res) {
+  // get the id
+  var id = req.params.id;
+  // validate the id, if not valid send 400 - A uses 404
+  if (!ObjectID.isValid(id)) {
+    return res.status(400).send(); // Andrew uses 404
+  }
+  // delete todo by id
+  Todo.findByIdAndDelete(id).then(function(todo) {
+    // success case
+    // if doc id was not found, it returns null, so check and in case send 404
+    if(!todo) {
+      return res.status(404).send();
+    }
+    // all is good
+    res.send(todo);
+  }).catch(function(err) {
+    // there was an error during the process
+    // if the error is not inside the then-callback func, the error is catched by express which sends and html error document
+    console.log(err);
+    res.status(500).send();
+  });
+});
+
 
 //
 // Listen
