@@ -1,6 +1,7 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-var ObjectID = require('mongodb').ObjectID;
+const _ = require('lodash');
+const express = require('express');
+const bodyParser = require('body-parser');
+const ObjectID = require('mongodb').ObjectID;
 
 // with ES6 destructuring it would be:  var {mongoose} = require('./db/mongoose.js');
 var mongoose = require('./db/mongoose.js').mongoose;
@@ -55,7 +56,7 @@ app.get('/todos/:id', function(req, res) {
   if (!ObjectID.isValid(id)) {
     return res.status(400).send(); // Andrew uses 404
   }
-  Todo.findById(req.params.id).then(function(todo) {
+  Todo.findById(id).then(function(todo) {
     if (!todo) {
       return res.status(404).send();
     }
@@ -85,6 +86,41 @@ app.delete('/todos/:id', function(req, res) {
   }).catch(function(err) {
     // there was an error during the process
     // if the error is not inside the then-callback func, the error is catched by express which sends and html error document
+    console.log(err);
+    res.status(500).send();
+  });
+});
+
+app.patch('/todos/:id', function(req, res) {
+  var id = req.params.id;
+  // if I set body euqual to req.body I risk that user modify or add some properties that he should not, like completedAt
+  // based on the model, user should only be able to modify "text" and "completed".
+  // with _.pick you can pass an array of the props to pull off from the body obj (if they exist)
+  var body = _.pick(req.body, ["text", "completed"]);
+
+  // validating the id
+  if (!ObjectID.isValid(id)) {
+    return res.status(400).send(); // Andrew uses 404
+  }
+
+  // check the completed value (eventually provided by the user) and set completedAt accordingly
+  if (_.isBoolean(body.completed) && body.completed) {
+    body.completedAt = new Date().getTime();
+  } else {
+    body.completed = false;
+    body.completedAt = null;
+  }
+
+  // query to update the database
+  // on updates you have to use the ! mongodb update operators! otherwise risk to replace the whole document!
+  // option needed to get the updated doc back instead of the original
+  Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then(function(todo) {
+    if(!todo) {
+      return res.status(404).send();
+    }
+    // all was good then send back the updated doc 
+    res.send(todo);
+  }).catch(function(err) {
     console.log(err);
     res.status(500).send();
   });
