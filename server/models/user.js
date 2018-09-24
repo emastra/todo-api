@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 var UserSchema = new mongoose.Schema({
   email: {
@@ -98,6 +99,26 @@ UserSchema.statics.findByToken = function(token) {
     'tokens.access': 'auth'
   });
 };
+
+// mongoose middleware, will run before save event and hash the password if it's been modified
+UserSchema.pre('save', function(next) {
+  var user = this;
+
+  // if we save the document because we change something else than the password, hashing must not run otherwise we'll hash the hash
+  // isModified returns true if the user pw was modified
+  if (user.isModified('password')) {
+    bcrypt.genSalt(10, function(err, salt) {
+      bcrypt.hash(user.password, salt, function(err, hash) {
+        // override the plain text user password with the hashed password
+        user.password = hash;
+        next();
+      });
+    });
+  } else {
+    // if not just go next
+    next();
+  }
+});
 
 var User = mongoose.model('User', UserSchema);
 
