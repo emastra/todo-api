@@ -52,10 +52,12 @@ UserSchema.methods.toJSON = function() {
 
 
 // to create a method on the schema . its an object where we can add custom instance methods
+// instance methods are available on the actual document, instance of the model
 // Use standard fuction declaration because we need the binded "this"
 // "this" stores the individual document
 UserSchema.methods.generateAuthToken = function() {
   // "this" stores the actual document, we assign it to user for convenience and consistency (same name as the usually used document variable)
+  // instance methods get called with the individual document binded to "this"
   var user = this;
   var access = 'auth';
   var token = jwt.sign({_id: user._id.toHexString(), access}, 'abc123').toString();
@@ -66,6 +68,34 @@ UserSchema.methods.generateAuthToken = function() {
   return user.save().then(function() {
     // usually you return another promise to chain. now we returns a value
     return token;
+  });
+};
+
+// static methods are methods available on the Model
+UserSchema.statics.findByToken = function(token) {
+  // static method get called with the Model as the "this" binding
+  User = this;
+  var decoded; // end result of jwt.verify()
+
+  // jwt.verfy() throw an error if something goes wrong, that's why we need try/catch blocks
+  try {
+    decoded = jwt.verify(token, 'abc123');
+  } catch(e) {
+    // return a promises that always gonna reject. if this code runs we never want the User.findOne below to run
+    // A shorten: return Promise.reject()
+    console.log('token did not verify. jwt.verify throw error');
+    return new Promise(function(resolve, reject) {
+      // if reject, in server.js success case never called but catch is called
+      reject();
+    });
+  }
+
+  // findOne returns a promise. And we're gonna return that promise so that we can chain inside server.js
+  return User.findOne({
+    _id: decoded._id,
+    // quotes are required when you have a dot, for nested documents ??
+    'tokens.token': token,
+    'tokens.access': 'auth'
   });
 };
 

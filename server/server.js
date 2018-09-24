@@ -9,6 +9,7 @@ var mongoose = require('./db/mongoose.js').mongoose;
 // require Todo and User models! To be used to create instances of model with specific info that will be a doc in db. then we can save it.
 var Todo = require('./models/todo.js').Todo;
 var User = require('./models/user.js').User;
+var authenticate = require('./middleware/authenticate').authenticate;
 
 var app = express();
 // if app running on heroku use process.env.PORT, if not use local 3000
@@ -142,6 +143,12 @@ app.post('/users', function(req, res) {
     console.log(err);
     res.status(400).send(err);
   });
+});
+
+// authenticate middleware inside
+app.get('/users/me', authenticate, function(req, res) {
+  // if get request pass all the authentication middleware, we just send back the user (which is inside req.user, set by the middleware)
+  res.send(req.user);
 });
 
 //
