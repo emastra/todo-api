@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ObjectID = require('mongodb').ObjectID;
 
+// require the configured mongoose
 // with ES6 destructuring it would be:  var {mongoose} = require('./db/mongoose.js');
 var mongoose = require('./db/mongoose.js').mongoose;
 // require Todo and User models! To be used to create instances of model with specific info that will be a doc in db. then we can save it.
@@ -10,6 +11,7 @@ var Todo = require('./models/todo.js').Todo;
 var User = require('./models/user.js').User;
 
 var app = express();
+// if app running on heroku use process.env.PORT, if not use local 3000
 var port = process.env.PORT || 3000;
 
 
@@ -42,9 +44,9 @@ app.post('/todos', function(req, res) {
 
 app.get('/todos', function(req, res) {
   // Documents can be retrieved through find, findOne and findById. These methods are executed on your Models.
-  // the success case callback gets called with the result of find() which is an array!
+  // the success case callback gets called with the result of find(), which is an array!
   Todo.find().then(function(todos) {
-    // so place the array inside an object. It's more flexible!
+    // ...so place the array inside an object. It's more flexible!
     res.send({ todos: todos });
   }, function(err) {
     res.status(400).send(err);
@@ -60,7 +62,7 @@ app.get('/todos/:id', function(req, res) {
     if (!todo) {
       return res.status(404).send();
     }
-    // All is good
+    // all was good so send back the doc
     res.send(todo);
   }).catch(function(err) {
     res.status(500).send(); // A uses 400
@@ -72,7 +74,7 @@ app.delete('/todos/:id', function(req, res) {
   var id = req.params.id;
   // validate the id, if not valid send 400 - A uses 404
   if (!ObjectID.isValid(id)) {
-    return res.status(400).send(); // Andrew uses 404
+    return res.status(400).send();
   }
   // delete todo by id
   Todo.findByIdAndDelete(id).then(function(todo) {
@@ -93,7 +95,7 @@ app.delete('/todos/:id', function(req, res) {
 
 app.patch('/todos/:id', function(req, res) {
   var id = req.params.id;
-  // if I set body euqual to req.body I risk that user modify or add some properties that he should not, like completedAt
+  // if I set body equal to req.body I risk that user modify or add some properties that he should not, like completedAt
   // based on the model, user should only be able to modify "text" and "completed".
   // with _.pick you can pass an array of the props to pull off from the body obj (if they exist)
   var body = _.pick(req.body, ["text", "completed"]);
@@ -118,7 +120,7 @@ app.patch('/todos/:id', function(req, res) {
     if(!todo) {
       return res.status(404).send();
     }
-    // all was good then send back the updated doc 
+    // all was good then send back the updated doc
     res.send(todo);
   }).catch(function(err) {
     console.log(err);
@@ -126,6 +128,21 @@ app.patch('/todos/:id', function(req, res) {
   });
 });
 
+app.post('/users', function(req, res) {
+  var body = _.pick(req.body, ["email", "password"]); // !! express catches sync errors by its own. if err here returns 500 not the 400 of the catch below!!!
+  // no need to create the obj manually because we have body obj ready to go
+  var user = new User(body);
+
+  user.save().then(function(user) { // A removes that user arg, becuase user below is the same as above ?? so its easy to understand code about waht we're sending. with or without, works the same
+    return user.generateAuthToken(); // return it because we are expecting to chain it
+    // res.send(user);
+  }).then(function(token){
+    res.header('x-auth', token).send(user);
+  }).catch(function(err) {
+    console.log(err);
+    res.status(400).send(err);
+  });
+});
 
 //
 // Listen

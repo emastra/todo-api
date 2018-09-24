@@ -16,7 +16,7 @@ var Todo = mongoose.model('Todo', {
   completedAt: {
     type: Number,
     default: null
-  }
+  } // this was the schema
 });
 
 module.exports = {
