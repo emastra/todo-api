@@ -188,6 +188,17 @@ app.post('/users/login', function(req, res) {
   });
 });
 
+app.delete('/users/me/token', authenticate, function(req, res) {
+  // access the instance method. the user get stored inside the req obj by the authenticate middleware // and the token as well
+  req.user.removeToken(req.token).then(function() {
+    // we dont need any data back. just know if removing token was success or not. this callback is for the success case.
+    res.status(200).send();
+  }, function() {
+    // this is for failure case
+    res.status(400).send();
+  });
+});
+
 //
 // Listen
 //

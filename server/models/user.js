@@ -41,6 +41,9 @@ var UserSchema = new mongoose.Schema({
   }]
 });
 
+//
+// Instance Methods
+//
 
 // toJSON method (mongoose applies it automagically right?)
 // determines what exactly get sent back when a mongoose model is converted into a json value
@@ -71,6 +74,27 @@ UserSchema.methods.generateAuthToken = function() {
     return token;
   });
 };
+
+UserSchema.methods.removeToken = function(token) {
+  var user = this;
+  // user.update doesnt take a query, we already the have the user we're updating
+  // we just need to pass the update object. we use the pull operator
+  // we must return, in order to be able to chain the call we set up in server.js
+  return user.update({
+    // pull op gets set equal to an object, where we define what we're gonna pull from
+    $pull: {
+      // we're gonna pull from the tokens array, pulling any objects on the array that has a token prop equals to the token prop passed above
+      tokens: {
+        token: token
+      }
+    }
+  });
+};
+
+
+//
+// Static methods
+//
 
 // static methods are methods available on the Model
 UserSchema.statics.findByToken = function(token) {
