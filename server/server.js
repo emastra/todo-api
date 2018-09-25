@@ -10,6 +10,7 @@ var mongoose = require('./db/mongoose.js').mongoose;
 var Todo = require('./models/todo.js').Todo;
 var User = require('./models/user.js').User;
 var authenticate = require('./middleware/authenticate').authenticate;
+//const bcrypt = require('bcryptjs');
 
 var app = express();
 // if app running on heroku use process.env.PORT, if not use local 3000
@@ -149,6 +150,42 @@ app.post('/users', function(req, res) {
 app.get('/users/me', authenticate, function(req, res) {
   // if get request pass all the authentication middleware, we just send back the user (which is inside req.user, set by the middleware)
   res.send(req.user);
+});
+
+// // login route
+// app.post('/users/login', function(req, res) {
+//   var email = req.body.email;
+//   var plainPassword = req.body.password;
+//
+//   User.findOne({email: email}).then(function(user) {
+//     //console.log(user);
+//     bcrypt.compare(plainPassword, user.password, function(err, bool) {
+//       if (bool) {
+//         res.send(_.pick(user, ["email"]));
+//       } else {
+//         res.status(401).send();
+//       }
+//     });
+//   }).catch(function(err) {
+//     console.log(err);
+//     res.status(400).send(err);
+//   });
+// });
+
+app.post('/users/login', function(req, res) {
+  var body = _.pick(req.body, ['email', 'password']);
+
+  User.findByCredentials(body.email, body.password).then(function(user) {
+    // the check if user existed was done in Model.findByCredentials, so here is all ok
+    // user we received back is an instance so i can use the instance methods...
+    return user.generateAuthToken().then(function(token) {
+      res.header('x-auth', token).send(user);
+    });
+  }).catch(function(err) {
+    // if any errors or reject()s along the way
+    console.log('1111', err)
+    res.status(400).send(err);
+  });
 });
 
 //

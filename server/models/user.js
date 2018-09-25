@@ -100,6 +100,29 @@ UserSchema.statics.findByToken = function(token) {
   });
 };
 
+UserSchema.statics.findByCredentials = function(email, plainPassword) {
+  var User = this;
+
+  // must return it because we need to chain in server.js!!
+  return User.findOne({email}).then(function(user) {
+    // if user not found for some reason
+    if (!user) {
+      return Promise.reject('User does not exist.'); // and the catch block on server.js will run. And execution stops here thanks to the return
+    }
+    // if found correctly, check if plainPassword match the hashed password stored in db
+    // bcryptjs only supports callbacks, so we need to wrap it inside a promise
+    return new Promise(function(resolve, reject) {
+      bcrypt.compare(plainPassword, user.password, function(err, bool) {
+        if (bool) {
+          resolve(user);
+        } else {
+          reject('Password did not match.');
+        }
+      });
+    });
+  });
+};
+
 // mongoose middleware, will run before save event and hash the password if it's been modified
 UserSchema.pre('save', function(next) {
   var user = this;
