@@ -10,7 +10,7 @@ var data = {
 // jwt.sign takes the obj (in our case the data with the objectID) and signs it, cioè creates the hash and returns the token
 // jwt.verify this makes the opposite, it takes the token and the secret and make sure the token was not manipulated, returns the decoded data
 
-// takes the obj (the data we wanna sign) and the secret, it returns the token, which is the alue we send to client and that we gonna store inside the token array inside the db
+// takes the obj (the data we wanna sign) and the secret, it returns the token, which is the value we send to client and that we gonna store inside the token array inside the db
 var token = jwt.sign(data, 'somesecret');
 
 console.log(token);

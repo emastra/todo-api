@@ -77,13 +77,13 @@ UserSchema.methods.generateAuthToken = function() {
 
 UserSchema.methods.removeToken = function(token) {
   var user = this;
-  // user.update doesnt take a query, we already the have the user we're updating
+  // user.update doesnt take a query, we already have the user we're updating
   // we just need to pass the update object. we use the pull operator
   // we must return, in order to be able to chain the call we set up in server.js
   return user.update({
     // pull op gets set equal to an object, where we define what we're gonna pull from
     $pull: {
-      // we're gonna pull from the tokens array, pulling any objects on the array that has a token prop equals to the token prop passed above
+      // we're gonna pull from the tokens array, pulling any objects on the array that has a token prop equal to the token prop passed above
       tokens: {
         token: token
       }

@@ -1,3 +1,5 @@
+require('./config/config.js');
+
 const _ = require('lodash');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -14,7 +16,7 @@ var authenticate = require('./middleware/authenticate').authenticate;
 
 var app = express();
 // if app running on heroku use process.env.PORT, if not use local 3000
-var port = process.env.PORT || 3000;
+var port = process.env.PORT; // we dont need anymore the '|| 3000' (for a default port) because PORT will always be set, in prod by heroku and in dev and test in config
 
 
 //
@@ -30,11 +32,13 @@ app.use(bodyParser.json());
 // Routes
 //
 
-app.post('/todos', function(req, res) {
+app.post('/todos', authenticate, function(req, res) {
   // create an instance of Todo model with the actual received info.
   // the body prop on the req obj is created by bodyParser middleware
   var todo = new Todo({
-    text: req.body.text
+    text: req.body.text,
+    // we can access the user id because authenticate middleware place the user inside the req obj, that we access with req.user
+    _creator: req.user._id
   });
 
   todo.save().then(function(doc) {
@@ -44,10 +48,14 @@ app.post('/todos', function(req, res) {
   });
 });
 
-app.get('/todos', function(req, res) {
+// get /todos now dont send all todos, but all todos created by the user who's making the request, the logged in user
+// this why we added the authenticate middleware, and the query obj to the Todo.find method
+app.get('/todos', authenticate, function(req, res) {
   // Documents can be retrieved through find, findOne and findById. These methods are executed on your Models.
   // the success case callback gets called with the result of find(), which is an array!
-  Todo.find().then(function(todos) {
+  Todo.find({
+    _creator: req.user._id  // with this we find only todos that were created by the logged in user
+  }).then(function(todos) {
     // ...so place the array inside an object. It's more flexible!
     res.send({ todos: todos });
   }, function(err) {
@@ -55,12 +63,18 @@ app.get('/todos', function(req, res) {
   });
 });
 
-app.get('/todos/:id', function(req, res) {
+// TO UDATE THE ROUTE AND MAKE IT PRIVATE:
+// 1- add authenticate middleware, 2- update the query, 3- update the test cases
+
+app.get('/todos/:id', authenticate, function(req, res) {
   var id = req.params.id;
   if (!ObjectID.isValid(id)) {
     return res.status(400).send(); // Andrew uses 404
   }
-  Todo.findById(id).then(function(todo) {
+  Todo.findOne({
+    _id: id,  // this is the id inside req.params which was provided by the url
+    _creator: req.user._id  // the current logged in user, we have access to this thanks to authenticate middleware
+  }).then(function(todo) {
     if (!todo) {
       return res.status(404).send();
     }
@@ -71,7 +85,7 @@ app.get('/todos/:id', function(req, res) {
   });
 });
 
-app.delete('/todos/:id', function(req, res) {
+app.delete('/todos/:id', authenticate, function(req, res) {
   // get the id
   var id = req.params.id;
   // validate the id, if not valid send 400 - A uses 404
@@ -79,7 +93,10 @@ app.delete('/todos/:id', function(req, res) {
     return res.status(400).send();
   }
   // delete todo by id
-  Todo.findByIdAndDelete(id).then(function(todo) {
+  Todo.findOneAndDelete({
+    _id: id,
+    _creator: req.user._id
+  }).then(function(todo) {
     // success case
     // if doc id was not found, it returns null, so check and in case send 404
     if(!todo) {
@@ -95,7 +112,7 @@ app.delete('/todos/:id', function(req, res) {
   });
 });
 
-app.patch('/todos/:id', function(req, res) {
+app.patch('/todos/:id', authenticate, function(req, res) {
   var id = req.params.id;
   // if I set body equal to req.body I risk that user modify or add some properties that he should not, like completedAt
   // based on the model, user should only be able to modify "text" and "completed".
@@ -118,7 +135,10 @@ app.patch('/todos/:id', function(req, res) {
   // query to update the database
   // on updates you have to use the ! mongodb update operators! otherwise risk to replace the whole document!
   // option needed to get the updated doc back instead of the original
-  Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then(function(todo) {
+  Todo.findOneAndUpdate({
+    _id: id,
+    _creator: req.user._id
+  }, {$set: body}, {new: true}).then(function(todo) {
     if(!todo) {
       return res.status(404).send();
     }
@@ -146,11 +166,11 @@ app.post('/users', function(req, res) {
   });
 });
 
-// authenticate middleware inside
 app.get('/users/me', authenticate, function(req, res) {
   // if get request pass all the authentication middleware, we just send back the user (which is inside req.user, set by the middleware)
   res.send(req.user);
 });
+
 
 // // login route
 // app.post('/users/login', function(req, res) {

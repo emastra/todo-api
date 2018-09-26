@@ -1,5 +1,8 @@
 var {User} = require('./../models/user');
 
+// authenticate middleware makes sure the user is logged in and
+// gives us access to user and token in the req object when we are in server.js
+
 var authenticate = function(req, res, next) {
   var token = req.header('x-auth');
 
@@ -11,6 +14,7 @@ var authenticate = function(req, res, next) {
     }
     // success case here
     // we modify the req obj so we can use it inside the route functions
+    // we place the found user and the received token inside the req object
     req.user = user;
     req.token = token;
     next();
