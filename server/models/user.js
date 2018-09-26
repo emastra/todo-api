@@ -64,7 +64,7 @@ UserSchema.methods.generateAuthToken = function() {
   // instance methods get called with the individual document binded to "this"
   var user = this;
   var access = 'auth';
-  var token = jwt.sign({_id: user._id.toHexString(), access}, 'abc123').toString();
+  var token = jwt.sign({_id: user._id.toHexString(), access}, process.env.JWT_SECRET).toString();
   // use concat instead of push because push has inconstencies across mongodb versions.
   user.tokens = user.tokens.concat([{access, token}]);
 
@@ -104,7 +104,7 @@ UserSchema.statics.findByToken = function(token) {
 
   // jwt.verfy() throw an error if something goes wrong, that's why we need try/catch blocks
   try {
-    decoded = jwt.verify(token, 'abc123');
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch(e) {
     // return a promises that always gonna reject. if this code runs we never want the User.findOne below to run
     // A shorten: return Promise.reject()
